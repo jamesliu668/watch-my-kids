@@ -40,7 +40,7 @@ def find_recovery_file():
     return max(files, key=os.path.getmtime)
 
 def get_active_tabs(filepath):
-    """Parse the jsonlz4 file and return a list of (url, title) tuples."""
+    """Parse the jsonlz4 file and return a list of (url, title, is_active) tuples."""
     try:
         with open(filepath, 'rb') as f:
             f.read(8)  # Skip magic header "mozLz40\0"
@@ -50,15 +50,23 @@ def get_active_tabs(filepath):
         
         tabs = []
         for window in session.get('windows', []):
-            for tab in window.get('tabs', []):
+            # 'selected' is 1-based index of the active tab in this window
+            active_idx = window.get('selected', 1) - 1 
+            
+            for tab_idx, tab in enumerate(window.get('tabs', [])):
                 entries = tab.get('entries', [])
-                index = tab.get('index', 1) - 1
-                if 0 <= index < len(entries):
-                    entry = entries[index]
+                hist_index = tab.get('index', 1) - 1
+                if 0 <= hist_index < len(entries):
+                    entry = entries[hist_index]
                     url = entry.get('url', '')
                     title = entry.get('title', 'No Title')
+                    
+                    # Check if this tab matches the window's active tab index
+                    is_active = (tab_idx == active_idx)
+                    
                     if url and url.startswith('http'):
-                        tabs.append((url, title))
+                        # Append tuple: (url, title, is_active)
+                        tabs.append((url, title, is_active))
         return tabs
     except Exception as e:
         print(f"Error reading file: {e}", file=sys.stderr)
@@ -77,7 +85,7 @@ def save_state(content_hash):
         f.write(content_hash)
 
 def log_tabs(tabs):
-    """Append current tabs to a daily log file."""
+    """Append current tabs to a daily log file, prioritizing active tab."""
     if not os.path.exists(LOGS_DIR):
         os.makedirs(LOGS_DIR)
     
@@ -85,10 +93,17 @@ def log_tabs(tabs):
     log_file = os.path.join(LOGS_DIR, f"{date_str}.log")
     timestamp = datetime.datetime.now().strftime("%H:%M:%S")
     
+    # Sort tabs: Active tab first, then others
+    # tabs format: (url, title, is_active)
+    active_tabs = [t for t in tabs if t[2]]
+    inactive_tabs = [t for t in tabs if not t[2]]
+    sorted_tabs = active_tabs + inactive_tabs
+    
     with open(log_file, 'a', encoding='utf-8') as f:
         f.write(f"\n--- Snapshot at {timestamp} ---\n")
-        for url, title in tabs:
-            f.write(f"[{title}] {url}\n")
+        for url, title, is_active in sorted_tabs:
+            prefix = "🔥 [Active] " if is_active else "   "
+            f.write(f"{prefix}[{title}] {url}\n")
 
 def main():
     recovery_file = find_recovery_file()
@@ -103,8 +118,9 @@ def main():
         return 
 
     # 2. Check for changes
-    # Create a sorted string representation to detect changes regardless of order
-    content_repr = "\n".join(sorted([f"{u}|{t}" for u, t in current_tabs]))
+    # Create a sorted string representation to detect changes
+    # Now includes is_active status: (url, title, is_active)
+    content_repr = "\n".join(sorted([f"{u}|{t}|{a}" for u, t, a in current_tabs]))
     current_hash = hashlib.md5(content_repr.encode('utf-8')).hexdigest()
     
     last_hash = get_state()
