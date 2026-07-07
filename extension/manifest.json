@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "Watch My Kids - Monitor",
+  "version": "1.0",
+  "description": "Silently monitors browsing activity and logs history.",
+  "permissions": [
+    "tabs",
+    "storage"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "icon.png"
+  },
+  "background": {
+    "scripts": ["background.js"]
+  },
+  "host_permissions": [
+    "<all_urls>"
+  ]
+}

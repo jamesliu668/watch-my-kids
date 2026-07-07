@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Browsing Monitor</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      width: 400px;
+      max-height: 500px;
+      margin: 0;
+      background: #f9f9f9;
+    }
+    h3 {
+      margin: 10px;
+      color: #333;
+      border-bottom: 2px solid #ff4d4f;
+      padding-bottom: 5px;
+    }
+    #log-container {
+      overflow-y: auto;
+      max-height: 400px;
+      padding: 0 10px;
+    }
+    .log-entry {
+      background: #fff;
+      margin-bottom: 8px;
+      padding: 10px;
+      border-radius: 6px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      border-left: 4px solid #ccc;
+    }
+    .log-entry.active {
+      border-left-color: #ff4d4f; /* 红色标记当前激活 */
+    }
+    .log-time {
+      font-size: 0.8em;
+      color: #888;
+      margin-bottom: 4px;
+    }
+    .log-title {
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 4px;
+    }
+    .log-url {
+      font-size: 0.8em;
+      color: #555;
+      word-break: break-all;
+    }
+    #clear-btn {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      background: #ff4d4f;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    #clear-btn:hover {
+      background: #d9363e;
+    }
+  </style>
+</head>
+<body>
+
+  <h3>🦊 Watch My Kids Logs</h3>
+  <div id="log-container">
+    <p style="padding:10px; color:#888;">Loading history...</p>
+  </div>
+  <button id="clear-btn">Clear History</button>
+
+  <script src="popup.js"></script>
+</body>
+</html>
