@@ -1,22 +1,27 @@
 [
   {
     "text": "完成今天的作业",
-    "completed": true
+    "completed": true,
+    "rest_used": false
   },
   {
     "text": "整理书桌",
-    "completed": false
+    "completed": true,
+    "rest_used": false
   },
   {
     "text": "复习今天的课程",
-    "completed": false
+    "completed": true,
+    "rest_used": false
   },
   {
     "text": "预习明天的内容",
-    "completed": false
+    "completed": true,
+    "rest_used": false
   },
   {
     "text": "合理安排时间，保护视力",
-    "completed": false
+    "completed": true,
+    "rest_used": false
   }
 ]

@@ -97,7 +97,7 @@ class ChecklistDialog:
 
         # "休息 1 分钟" 按钮（完成至少一项时出现）
         self.rest_btn = tk.Label(
-            self.bottom_frame, text="休息 1 分钟",
+            self.bottom_frame, text="休息 20 分钟",
             font=("Arial", 12, "bold"),
             width=12, height=1,
             bg="#FFA726", fg="white",
@@ -120,11 +120,11 @@ class ChecklistDialog:
             return data
         except (FileNotFoundError, json.JSONDecodeError):
             return [
-                {"text": "完成今天的作业", "completed": False},
-                {"text": "整理书桌", "completed": False},
-                {"text": "复习今天的课程", "completed": False},
-                {"text": "预习明天的内容", "completed": False},
-                {"text": "合理安排时间，保护视力", "completed": False},
+                {"text": "完成今天的作业", "completed": False, "rest_used": False},
+                {"text": "整理书桌", "completed": False, "rest_used": False},
+                {"text": "复习今天的课程", "completed": False, "rest_used": False},
+                {"text": "预习明天的内容", "completed": False, "rest_used": False},
+                {"text": "合理安排时间，保护视力", "completed": False, "rest_used": False},
             ]
 
     def refresh_status(self):
@@ -132,11 +132,12 @@ class ChecklistDialog:
         self.tasks = self.load_config()
 
         all_checked = True
-        any_checked = False
+        any_new_rest = False  # 是否有新完成但还未休息的任务
         for i, task in enumerate(self.tasks):
             self.vars[i].set(task["completed"])
             if task["completed"]:
-                any_checked = True
+                if not task.get("rest_used", False):
+                    any_new_rest = True  # 有已完成但还没休息过的任务
             else:
                 all_checked = False
 
@@ -149,10 +150,10 @@ class ChecklistDialog:
             self.can_close = True
             self.btn.pack()
             self.hint_label.config(text="✅ 任务全部完成！可以点击关闭了", fg="#4CAF50")
-        elif any_checked:
+        elif any_new_rest:
             self.rest_btn.pack()
             self.hint_label.config(
-                text="继续加油！完成一项可以休息1分钟 🎯",
+                text="继续加油！完成一项可以休息20分钟 🎯",
                 fg="#FFA726"
             )
         else:
@@ -165,10 +166,17 @@ class ChecklistDialog:
         self.root.after(2000, self.refresh_status)
 
     def take_rest(self):
-        """关闭窗口，1分钟后重新打开"""
+        """关闭窗口，1分钟后重新打开。将所有已完成任务标记为已休息"""
+        # 标记所有已完成的任务为已休息
+        for task in self.tasks:
+            if task["completed"]:
+                task["rest_used"] = True
+        with open(CONFIG_PATH, "w", encoding="utf-8") as f:
+            json.dump(self.tasks, f, ensure_ascii=False, indent=2)
+
         script = os.path.abspath(__file__)
         python = sys.executable
-        subprocess.Popen(f"sleep 60 && {python} {script}", shell=True)
+        subprocess.Popen(f"sleep 1200 && {python} {script}", shell=True)
         self.root.destroy()
 
     def prevent_close(self):
