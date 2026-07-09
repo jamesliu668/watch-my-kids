@@ -5,18 +5,18 @@
   },
   {
     "text": "整理书桌",
-    "completed": true
+    "completed": false
   },
   {
     "text": "复习今天的课程",
-    "completed": true
+    "completed": false
   },
   {
     "text": "预习明天的内容",
-    "completed": true
+    "completed": false
   },
   {
     "text": "合理安排时间，保护视力",
-    "completed": true
+    "completed": false
   }
 ]

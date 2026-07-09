@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import json
 import os
+import subprocess
+import sys
 import tkinter as tk
 
 CONFIG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tasks_config.json")
@@ -10,14 +12,14 @@ class ChecklistDialog:
         self.root = root
         self.root.title("👀 监控提醒")
 
-        # 全屏覆盖整个屏幕（macOS 原生全屏模式）
+        # 全屏覆盖（macOS 原生全屏模式，盖住菜单栏和 Dock）
         self.root.attributes("-fullscreen", True)
+
+        # 去掉标题栏
+        self.root.overrideredirect(True)
 
         # 置顶
         self.root.attributes("-topmost", True)
-
-        # 去掉标题栏 → 无法拖动、无法最小化、无法关闭
-        self.root.overrideredirect(True)
 
         # 模态锁定
         self.root.grab_set()
@@ -33,20 +35,20 @@ class ChecklistDialog:
         self.tasks = self.load_config()
 
         # 主容器 - 居中放置内容
-        main_frame = tk.Frame(root, bd=2, relief="raised")
-        main_frame.place(relx=0.5, rely=0.5, anchor="center", width=560, height=500)
+        main_frame = tk.Frame(root, bd=2, relief="raised", bg="#f0f0f0")
+        main_frame.place(relx=0.5, rely=0.5, anchor="center", width=560, height=550)
 
         # 标题
-        tk.Label(main_frame, text="👀 请完成以下所有任务：", font=("Arial", 18, "bold")).pack(pady=(35, 10))
+        tk.Label(main_frame, text="👀 请完成以下所有任务：", font=("Arial", 18, "bold"), bg="#f0f0f0").pack(pady=(35, 10))
 
         # 提示
         hint_text = "请先完成今天的任务。完成后，将任务结果发送到微信群。你爸会给你远程审批。"
-        tk.Label(main_frame, text=hint_text, font=("Arial", 11), fg="#888", wraplength=520).pack(pady=(0, 15))
+        tk.Label(main_frame, text=hint_text, font=("Arial", 11), fg="#888", bg="#f0f0f0", wraplength=520).pack(pady=(0, 15))
 
         # Checklist 项目
         self.vars = []
 
-        frame = tk.Frame(main_frame)
+        frame = tk.Frame(main_frame, bg="#f0f0f0")
         frame.pack(pady=5, padx=50, fill="both", expand=True)
 
         for i, task in enumerate(self.tasks):
@@ -61,7 +63,8 @@ class ChecklistDialog:
                 font=("Arial", 14),
                 anchor="w",
                 padx=10, pady=6,
-                state="disabled"
+                state="disabled",
+                bg="#f0f0f0"
             )
             if completed:
                 cb.config(fg="#4CAF50")
@@ -73,16 +76,16 @@ class ChecklistDialog:
 
         # 提示文字
         self.hint_label = tk.Label(
-            main_frame, text="⚠️ 请先完成所有任务，全部完成后按钮将自动出现",
-            font=("Arial", 12), fg="#888", wraplength=520
+            main_frame, text="请先完成今天的任务。完成后，将任务结果发送到微信群。你爸会给你远程审批。",
+            font=("Arial", 12), fg="#888", bg="#f0f0f0", wraplength=520
         )
-        self.hint_label.pack(pady=(15, 10))
+        self.hint_label.pack(pady=(15, 5))
 
         # 底部容器
-        self.bottom_frame = tk.Frame(main_frame)
+        self.bottom_frame = tk.Frame(main_frame, bg="#f0f0f0")
         self.bottom_frame.pack(pady=(0, 25))
 
-        # "好的" 按钮（用 Label 实现）
+        # "好的" 按钮（全部完成时出现）
         self.btn = tk.Label(
             self.bottom_frame, text="好的",
             font=("Arial", 15, "bold"),
@@ -92,8 +95,18 @@ class ChecklistDialog:
         )
         self.btn.bind("<Button-1>", lambda e: self.ok())
 
+        # "休息 1 分钟" 按钮（完成至少一项时出现）
+        self.rest_btn = tk.Label(
+            self.bottom_frame, text="休息 1 分钟",
+            font=("Arial", 12, "bold"),
+            width=12, height=1,
+            bg="#FFA726", fg="white",
+            cursor="hand2", relief="raised"
+        )
+        self.rest_btn.bind("<Button-1>", lambda e: self.take_rest())
+
         # 占位空白
-        self.placeholder = tk.Label(self.bottom_frame, text="", font=("Arial", 14), width=12, height=1)
+        self.placeholder = tk.Label(self.bottom_frame, text="", font=("Arial", 14), width=12, height=1, bg="#f0f0f0")
         self.placeholder.pack()
 
         # 定时检查配置文件状态
@@ -119,22 +132,44 @@ class ChecklistDialog:
         self.tasks = self.load_config()
 
         all_checked = True
+        any_checked = False
         for i, task in enumerate(self.tasks):
             self.vars[i].set(task["completed"])
-            if not task["completed"]:
+            if task["completed"]:
+                any_checked = True
+            else:
                 all_checked = False
+
+        # 重置底部按钮区域
+        self.placeholder.pack_forget()
+        self.btn.pack_forget()
+        self.rest_btn.pack_forget()
 
         if all_checked:
             self.can_close = True
-            self.placeholder.pack_forget()
             self.btn.pack()
             self.hint_label.config(text="✅ 任务全部完成！可以点击关闭了", fg="#4CAF50")
+        elif any_checked:
+            self.rest_btn.pack()
+            self.hint_label.config(
+                text="继续加油！完成一项可以休息1分钟 🎯",
+                fg="#FFA726"
+            )
         else:
-            self.btn.pack_forget()
             self.placeholder.pack()
-            self.hint_label.config(text="请先完成今天的任务。完成后，将任务结果发送到微信群。你爸会给你远程审批。", fg="#888")
+            self.hint_label.config(
+                text="请先完成今天的任务。完成后，将任务结果发送到微信群。你爸会给你远程审批。",
+                fg="#888"
+            )
 
         self.root.after(2000, self.refresh_status)
+
+    def take_rest(self):
+        """关闭窗口，1分钟后重新打开"""
+        script = os.path.abspath(__file__)
+        python = sys.executable
+        subprocess.Popen(f"sleep 60 && {python} {script}", shell=True)
+        self.root.destroy()
 
     def prevent_close(self):
         """拦截关闭按钮"""
