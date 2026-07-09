@@ -40,7 +40,7 @@ class ChecklistDialog:
         tk.Label(main_frame, text="👀 请完成以下所有任务：", font=("Arial", 18, "bold")).pack(pady=(35, 10))
 
         # 提示
-        hint_text = "📌 已完成 ✅   /   未完成 ⬜  (全部完成后按钮才可点击)"
+        hint_text = "请先完成今天的任务。完成后，将任务结果发送到微信群。你爸会给你远程审批。"
         tk.Label(main_frame, text=hint_text, font=("Arial", 11), fg="#888", wraplength=520).pack(pady=(0, 15))
 
         # Checklist 项目
@@ -132,7 +132,7 @@ class ChecklistDialog:
         else:
             self.btn.pack_forget()
             self.placeholder.pack()
-            self.hint_label.config(text="⚠️ 请先完成所有任务，全部完成后按钮将自动出现", fg="#888")
+            self.hint_label.config(text="请先完成今天的任务。完成后，将任务结果发送到微信群。你爸会给你远程审批。", fg="#888")
 
         self.root.after(2000, self.refresh_status)
 
